@@ -60,6 +60,16 @@ def get_args(node):
 
 # Check if there is an api match 
 def ast_check(candidate_subtree_list, base_tree_list):
+    """
+    Check if there is an API match between candidate subtrees and base trees.
+
+    Args:
+        candidate_subtree_list (list): A list of candidate subtrees with their depths and text contents.
+        base_tree_list (list): A list of base trees to compare against.
+
+    Returns:
+        int: The index of the matching base tree in base_tree_list if a match is found, -1 otherwise.
+    """
     for idx, base_tree in enumerate(base_tree_list):
         if base_tree.children[0].children[0].child_count == 0:
             continue
@@ -161,6 +171,16 @@ def main(args):
         else:
             pass
 
+    if args.use_wandb:
+        import wandb
+        if args.wandb_run_id is not None: 
+            wandb.init(project=args.wandb_project, entity=args.wandb_entity, id=args.wandb_run_id, resume="must") 
+        else:
+            wandb.init(project=args.wandb_project, entity=args.wandb_entity)
+
+        wandb.summary['final_functionality_accuracy'] = total_correct / len(llm_responses)
+        wandb.summary['final_hallucination'] = total_hallucination/len(llm_responses)
+
     print('Final Functionality accuracy: ', total_correct / len(llm_responses))
     print('Final hallucination: ', total_hallucination/len(llm_responses))
 
@@ -169,5 +189,9 @@ if __name__ == "__main__":
     parser.add_argument("--api_dataset", type=str, default=None, help="path to your api dataset")
     parser.add_argument("--apibench", type=str, default=None, help="path to your apibench dataset including the question and answer pairs")
     parser.add_argument("--llm_responses", type=str, default=None, help="path to the language model responses")
+    parser.add_argument("--use_wandb", action='store_true', help="pass this argument to turn on Weights & Biases logging of the LLM responses")
+    parser.add_argument("--wandb_project", type=str, default="gorilla-api", help="Weights & Biases project name")
+    parser.add_argument("--wandb_entity", type=str, default=None, help="Weights & Biases entity name")
+    parser.add_argument("--wandb_run_id", type=str, default=None, help="pass W&B run id to append results to that run, otherwise a new W&B run is logged")
     args = parser.parse_args()
     main(args)
